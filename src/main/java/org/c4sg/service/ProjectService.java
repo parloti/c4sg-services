@@ -5,6 +5,7 @@ import java.util.List;
 import org.c4sg.dto.CreateProjectDTO;
 import org.c4sg.dto.ProjectDTO;
 import org.c4sg.exception.ProjectServiceException;
+import org.springframework.data.domain.Page;
 
 public interface ProjectService {
 
@@ -14,7 +15,7 @@ public interface ProjectService {
 
 	List<ProjectDTO> findProjects();
 
-	List<ProjectDTO> findByKeyword(String keyWord, List<Integer> skills, String status, String remote);
+	Page<ProjectDTO> findByKeyword(String keyWord, List<Integer> skills, String status, String remote,int page, int size);
 
 	List<ProjectDTO> findByUser(Integer userId, String userProjectStatus) throws ProjectServiceException;
 
@@ -27,9 +28,7 @@ public interface ProjectService {
 	ProjectDTO updateProject(ProjectDTO project);
 
 	void deleteProject(int id);
-
-	//void apply(UserDTO user, ProjectDTO project) throws IOException, EmailException;
-
-	String getImageUploadPath(Integer projectId);
+	
+    void saveImage(Integer id, String imgUrl);
 
 }

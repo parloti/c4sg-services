@@ -12,6 +12,7 @@ import org.c4sg.exception.UserProjectException;
 import org.c4sg.service.ProjectService;
 import org.c4sg.util.FileUploadUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -76,15 +77,20 @@ public class ProjectController {
     @CrossOrigin
     @RequestMapping(value = "/search", method = RequestMethod.GET)
     @ApiOperation(value = "Find ACTIVE project by keyWord or skills", notes = "Returns a collection of active projects")
-    public List<ProjectDTO> getProjects(@ApiParam(value = "Keyword of project(s) to return")
+    public Page<ProjectDTO> getProjects(@ApiParam(value = "Keyword of project(s) to return")
                                         @RequestParam(required=false) String keyWord,
                                         @ApiParam(value = "Skills for projects to return")
                                         @RequestParam(required = false) List<Integer> skills,
                                         @ApiParam(value = "Status of the project")
     									@Pattern(regexp="[AC]")  @RequestParam(required = false) String status,
     									@ApiParam(value = "Location of the project")
-    									@Pattern(regexp="[YN]") @RequestParam(required = false) String remote) {
-        return projectService.findByKeyword(keyWord,skills,status,remote);
+    									@Pattern(regexp="[YN]") @RequestParam(required = false) String remote,
+    @ApiParam(value = "Results page you want to retrieve (0..N)", defaultValue="0",required=true)
+    @RequestParam(required=true) int page,
+    @ApiParam(value = "Number of records per page", defaultValue="5",required=true)
+    @RequestParam(required=true) int size)
+    {
+        return projectService.findByKeyword(keyWord,skills,status,remote,page,size);
     }
 
     @CrossOrigin
@@ -190,61 +196,14 @@ public class ProjectController {
         	throw e;
         }
     }
-
-    @RequestMapping(value = "/{id}/image", method = RequestMethod.POST)
-   	@ApiOperation(value = "Add new image file for project")
-   	public String uploadImage(@ApiParam(value = "user Id", required = true) @PathVariable("id") Integer id,
-   			@ApiParam(value = "Image File", required = true) @RequestPart("file") MultipartFile file) {
-
-   		String contentType = file.getContentType();
-   		if (!FileUploadUtil.isValidImageFile(contentType)) {
-   			return "Invalid image File! Content Type :-" + contentType;
-   		}
-   		File directory = new File(PROJECT_UPLOAD.getValue());
-   		if (!directory.exists()) {
-   			directory.mkdir();
-   		}
-   		File f = new File(projectService.getImageUploadPath(id));
-   		try (FileOutputStream fos = new FileOutputStream(f)) {
-   			byte[] imageByte = file.getBytes();
-   			fos.write(imageByte);
-   			return "Success";
-   		} catch (Exception e) {
-   			return "Error saving image for Project " + id + " : " + e;
-   		}
-   	}
-
+        
     @CrossOrigin
-    @RequestMapping(value = "/{id}/image", method = RequestMethod.GET)
-    @ApiOperation(value = "Retrieves project image")
-    public String retrieveImage(@ApiParam(value = "Project id to get image for", required = true)
-                                         @PathVariable("id") int id) {
-        File image = new File(projectService.getImageUploadPath(id));
-        try {
-			FileInputStream fileInputStreamReader = new FileInputStream(image);
-            byte[] bytes = new byte[(int) image.length()];
-            fileInputStreamReader.read(bytes);
-            fileInputStreamReader.close();
-            return new String(Base64.encodeBase64(bytes));
-        } catch (IOException e) {
-            e.printStackTrace();
-        return null;
-        }
-    }
-   
-    
-    @CrossOrigin
-    @RequestMapping(value = "/{id}/image", method = RequestMethod.PUT)
-    @ApiOperation(value = "Delete image for project")
-    public ResponseEntity<File> deleteImage(@ApiParam(value = "ID of project", required = true)
-    										@PathVariable("id") int id) {
-    	File image = new File(projectService.getImageUploadPath(id));
-    	if (image.exists()) {
-    		image.delete();
-    		return ResponseEntity.noContent().build();
-    	} else {
-    		throw new NotFoundException("project image not found");
-    	}
-    }
+    @RequestMapping(value = "/{id}/image", params = "imgUrl", method = RequestMethod.PUT)
+	@ApiOperation(value = "Upload a project image")
+	public void saveImage(@ApiParam(value = "project Id", required = true) @PathVariable("id") Integer id,
+			@ApiParam(value = "Image Url", required = true) @RequestParam("imgUrl") String url) {
+
+    	projectService.saveImage(id, url);
+	}
 }
 

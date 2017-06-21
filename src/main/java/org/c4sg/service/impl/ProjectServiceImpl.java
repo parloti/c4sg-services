@@ -1,10 +1,7 @@
 package org.c4sg.service.impl;
 
 import static java.util.Objects.requireNonNull;
-import static org.c4sg.constant.Directory.PROJECT_UPLOAD;
-import static org.c4sg.constant.Format.IMAGE;
 
-import java.io.File;
 import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.List;
@@ -27,6 +24,9 @@ import org.c4sg.mapper.ProjectMapper;
 import org.c4sg.service.AsyncEmailService;
 import org.c4sg.service.ProjectService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -71,17 +71,17 @@ public class ProjectServiceImpl implements ProjectService {
         return projectMapper.getProjectDtoFromEntity(projectDAO.findByName(name));
     }
 
-    public List<ProjectDTO> findByKeyword(String keyWord, List<Integer> skills, String status, String remote) {
- 
-    	List<Project> projects = null;
-    	if(skills != null)
-    	{
-    		projects = projectDAO.findByKeywordAndSkill(keyWord, skills, status, remote);
+    public Page<ProjectDTO> findByKeyword(String keyWord, List<Integer> skills, String status, String remote,int page, int size) {
+
+		Page<Project> projects = null;
+		Pageable pageable=new PageRequest(page,size);    	
+    	if(skills != null) {
+    		projects = projectDAO.findByKeywordAndSkill(keyWord, skills, status, remote,pageable);
+    	} else {
+    		projects = projectDAO.findByKeyword(keyWord, status, remote,pageable);
     	}
-    	else{
-    		projects = projectDAO.findByKeyword(keyWord, status, remote);
-    	}
-        return projectMapper.getDtosFromEntities(projects);
+        //return projectMapper.getDtosFromEntities(projects);
+        return projects.map(p -> projectMapper.getProjectDtoFromEntity(p));
     }
     
     @Override
@@ -165,10 +165,7 @@ public class ProjectServiceImpl implements ProjectService {
         Project localProject = projectDAO.findById(id);
 
         if (localProject != null) {
-        	
-        	File image = new File(getImageUploadPath(id));        	
-        	image.delete();        		  	
-        
+        	// TODO delete image from S3 by frontend
         	userProjectDAO.deleteByProjectStatus(new Integer(id),"B");        	
         	projectSkillDAO.deleteByProjectId(id);            	
             projectDAO.deleteProject(id);
@@ -190,10 +187,6 @@ public class ProjectServiceImpl implements ProjectService {
         String userText = "You submitted an application from Code for Social Good. " +
                 "Organization is notified to review your application and contact you.";
         asyncEmailService.send(from, userEmail, userSubject, userText);
-    }
-
-    public String getImageUploadPath(Integer projectId) {
-        return PROJECT_UPLOAD.getValue() + File.separator + projectId + IMAGE.getValue();
     }
     
     private void isBookmarkPresent(Integer userId, Integer projectId)
@@ -223,4 +216,9 @@ public class ProjectServiceImpl implements ProjectService {
         	}
     	}    	
     }
+    
+	@Override
+	public void saveImage(Integer id, String imgUrl) {
+		projectDAO.updateImage(imgUrl, id);
+	}
 }

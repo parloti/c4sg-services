@@ -1,6 +1,8 @@
 package org.c4sg.dao;
 
 import org.c4sg.entity.Project;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
@@ -76,9 +78,10 @@ public interface ProjectDAO extends CrudRepository<Project, Long> {
             +   ")  "
             + "ORDER BY p.createdTime DESC";
     
-  String DELETE_PROJECT = "UPDATE Project p set p.status = 'C' where p.id = :projId";
+    String DELETE_PROJECT = "UPDATE Project p set p.status = 'C' where p.id = :projId";
 
-    
+  	String SAVE_IMAGE = "UPDATE Project p set p.imageUrl = :imgUrl where p.id = :projectId";
+  
 	Project findById(int id);
 	Project findByName(String name);
 
@@ -89,10 +92,10 @@ public interface ProjectDAO extends CrudRepository<Project, Long> {
     List<Project> findByNameOrDescription(@Param("name") String name, @Param("description") String description);
 
     @Query(FIND_BY_KEYWORD_SKILL_CRITERIA)
-    List<Project> findByKeywordAndSkill(@Param("keyWord") String keyWord, @Param("skills") List<Integer> skills, @Param("status") String status, @Param("remote") String remote);
+    Page<Project> findByKeywordAndSkill(@Param("keyWord") String keyWord, @Param("skills") List<Integer> skills, @Param("status") String status, @Param("remote") String remote, Pageable pageable);
     
     @Query(FIND_BY_KEYWORD_CRITERIA)
-    List<Project> findByKeyword(@Param("keyWord") String keyWord, @Param("status") String status, @Param("remote") String remote);
+    Page<Project> findByKeyword(@Param("keyWord") String keyWord, @Param("status") String status, @Param("remote") String remote, Pageable pageable);
 
 	@Query(FIND_BY_ORGANIZATION_ID_AND_STATUS)
 	List<Project> getProjectsByOrganization(@Param("orgId") Integer orgId, @Param("projectStatus") String projectStatus);
@@ -105,5 +108,9 @@ public interface ProjectDAO extends CrudRepository<Project, Long> {
 	@Query(DELETE_PROJECT)
 	Integer deleteProject(@Param("projId") int projId);
 	
-	
+    @Transactional
+    @Modifying
+    @Query(SAVE_IMAGE)
+    void updateImage(@Param("imgUrl") String imgUrl, @Param("projectId") Integer projectId);
+   
 }

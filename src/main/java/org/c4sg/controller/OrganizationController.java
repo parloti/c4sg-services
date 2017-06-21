@@ -24,6 +24,7 @@ import org.c4sg.exception.UserProjectException;
 import org.c4sg.service.OrganizationService;
 import org.c4sg.util.FileUploadUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -53,43 +54,6 @@ public class OrganizationController {
 	@Autowired
 	private OrganizationService organizationService;
 
-	@RequestMapping(value = "/{id}/logo", method = RequestMethod.POST)
-	@ApiOperation(value = "Upload Logo as Image File")
-	public String uploadLogo(@ApiParam(value = "Organization Id", required = true) @PathVariable Integer id,
-			@ApiParam(value = "Image File", required = true) @RequestPart("file") MultipartFile file) {
-		String contentType = file.getContentType();
-
-		if (!FileUploadUtil.isValidImageFile(contentType)) {
-			return "Invalid Image file! Content Type :-" + contentType;
-		}
-		File directory = new File(LOGO_UPLOAD.getValue());
-		if (!directory.exists()) {
-			directory.mkdir();
-		}
-		File f = new File(organizationService.getLogoUploadPath(id));
-		try (FileOutputStream fos = new FileOutputStream(f)) {
-			byte[] imageByte = file.getBytes();
-			fos.write(imageByte);
-			return "Success";
-		} catch (Exception e) {
-			return "Error saving logo for organization " + id + " : " + e;
-		}
-	}
-
-	@CrossOrigin
-	@RequestMapping(value = "/logos/{id}", method = RequestMethod.PUT)
-	@ApiOperation(value = "Delete logo for an organization")
-	public ResponseEntity<File> deleteLogo(
-			@ApiParam(value = "ID of organization", required = true) @PathVariable("id") int id) {
-		File logo = new File(organizationService.getLogoUploadPath(id));
-		if (logo.exists()) {
-			logo.delete();
-			return ResponseEntity.noContent().build();
-		} else {
-			throw new NotFoundException("logo not found");
-		}
-	}
-
 	@CrossOrigin
 	@RequestMapping(produces = { "application/json" }, method = RequestMethod.GET)
 	@ApiOperation(value = "Find all organizations", notes = "Returns a collection of organizations")
@@ -108,16 +72,20 @@ public class OrganizationController {
 	@CrossOrigin
 	@RequestMapping(value = "/search", produces = { "application/json" }, method = RequestMethod.GET)
 	@ApiOperation(value = "Find organization by keyWord", notes = " Returns a list of organizations which has the keyword in name / description / country, AND, which has the opportunities open, AND, which is located in the selected country. The search result is sorted by organization name in ascending order.")
-	public List<OrganizationDTO> getOrganizations(
+	public Page<OrganizationDTO> getOrganizations(
 			@ApiParam(value = "Keyword in Name or description or country of organization to return", required = false) @RequestParam(required = false) String keyWord,
 			@ApiParam(value = "Countries of organization to return", required = false) @RequestParam(required = false) List<String> countries,
 			@ApiParam(value = "Opportunities open in the organization", required = false) @RequestParam(required = false) Boolean open,
 			@ApiParam(value = "Status of the organization to return", required = false) @Pattern(regexp="[AD]") @RequestParam(required = false) String status,
-			@ApiParam(value = "Category of the organization to return", required = false) @Pattern(regexp="[NOM]") @RequestParam(required = false) String category) {
-		return organizationService.findByCriteria(keyWord, countries, open, status, category);
+			@ApiParam(value = "Category of the organization to return", required = false) @Pattern(regexp="[NOM]") @RequestParam(required = false) String category,
+		    @ApiParam(value = "Results page you want to retrieve (0..N)", defaultValue="0",required=true)
+		    @RequestParam(required=true) int page,
+		    @ApiParam(value = "Number of records per page", defaultValue="5",required=true)
+		    @RequestParam(required=true) int size)	
+	{
+		return organizationService.findByCriteria(keyWord, countries, open, status, category,page,size);
 	}
 
-	// TODO Define error codes: required input missing, etc
 	@CrossOrigin
 	@RequestMapping(method = RequestMethod.POST)
 	@ApiOperation(value = "Create organization", notes = "Creates an organization, and returns the organization created.", response = OrganizationDTO.class)
@@ -137,7 +105,6 @@ public class OrganizationController {
 			System.err.println(e);
 		}
 
-		System.out.println("**************Create Organization: End**************");
 		return responseData;
 	}
 
@@ -174,24 +141,6 @@ public class OrganizationController {
 	}
 
 	@CrossOrigin
-	@RequestMapping(value = "/{id}/logo", method = RequestMethod.GET)
-	@ApiOperation(value = "Retrieves organization logo")
-	public String retrieveOrganizationLogo(
-			@ApiParam(value = "Organization id to get logo for", required = true) @PathVariable("id") int id) {
-		File logo = new File(organizationService.getLogoUploadPath(id));
-		try {
-			FileInputStream fileInputStreamReader = new FileInputStream(logo);
-			byte[] bytes = new byte[(int) logo.length()];
-			fileInputStreamReader.read(bytes);
-			fileInputStreamReader.close();
-			return new String(Base64.encodeBase64(bytes));
-		} catch (IOException e) {
-			e.printStackTrace();
-			return null;
-		}
-	}
-
-	@CrossOrigin
 	@RequestMapping(value = "/user/{id}", method = RequestMethod.GET)
 	@ApiOperation(value = "Find organizations by user id", notes = "Returns a collection of organizations")
 	@ApiResponses(value = { @ApiResponse(code = 404, message = "ID of user invalid") })
@@ -224,5 +173,14 @@ public class OrganizationController {
 		} catch (NullPointerException | UserOrganizationException e) {
 			throw new NotFoundException("ID of organization or user invalid, or relationship already exist");
 		}
+	}
+	
+    @CrossOrigin
+    @RequestMapping(value = "/{id}/logo", params = "imgUrl", method = RequestMethod.PUT)
+	@ApiOperation(value = "Upload an organization logo image")
+	public void saveLogo(@ApiParam(value = "organization Id", required = true) @PathVariable("id") Integer id,
+			@ApiParam(value = "Image Url", required = true) @RequestParam("imgUrl") String url) {
+
+    	organizationService.saveLogo(id, url);
 	}
 }
