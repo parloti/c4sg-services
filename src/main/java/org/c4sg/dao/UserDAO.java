@@ -22,6 +22,10 @@ public interface UserDAO extends JpaRepository<User, Long>, JpaSpecificationExec
             "WHERE u.status = 'A' and u.role = 'V' and u.publishFlag = 'Y' " + 
     		"ORDER BY u.createdTime DESC";
     
+    String FIND_BY_NOTIFY = 
+    		"SELECT u FROM User u " +
+            "WHERE u.status = 'A' and u.role = 'V' and u.notifyFlag = 'Y'";
+    
     String FIND_BY_ID_QUERY = 
     		"SELECT u FROM UserProject up " +
             "JOIN up.user u " +
@@ -75,28 +79,26 @@ public interface UserDAO extends JpaRepository<User, Long>, JpaSpecificationExec
                +   " AND (:role is null OR u.role = :role)"               +   " AND (:publishFlag is null OR u.publishFlag = :publishFlag)"
                +   ")  "
                + "ORDER BY u.createdTime DESC";
-                
-    String UPDATE_SLACK_STATUS = "UPDATE User u set u.chatFlag = :isSlackReg where u.id = :userId";
     
     String DELETE_USER_PROJECTS = "DELETE FROM UserProject up WHERE up.user.id=:userId";
     String DELETE_USER_SKILLS = "DELETE FROM UserSkill us WHERE us.user.id=:userId";    
     
     String SAVE_AVATAR = "UPDATE User u set u.avatarUrl = :imgUrl where u.id = :userId";
     
+    // String UPDATE_SLACK_STATUS = "UPDATE User u set u.chatUserName = u.userName where u.id = :userId";
+    
     @Query(FIND_ACTIVE_VOLUNTEERS)
     Page<User> findActiveVolunteers(Pageable pageable);
 
+    @Query(FIND_BY_NOTIFY)
+    List<User> findByNotify();
+    
     User findById(int id);
     
     User findByEmail(String email);
     
     List<User> findAllByOrderByIdDesc();    
-  
-    @Transactional
-    @Modifying
-    @Query(UPDATE_SLACK_STATUS)
-    Integer updateIsSlackRegisteredFlag(@Param("isSlackReg") String isSlackReg, @Param("userId") Integer userId);
-  
+    
     @Query(FIND_BY_ID_QUERY)
     List<User> findByUserProjectId(@Param("projId") Integer projId, @Param("userProjStatus") String userProjStatus);
     
@@ -109,6 +111,12 @@ public interface UserDAO extends JpaRepository<User, Long>, JpaSpecificationExec
     @Query(FIND_BY_KEYWORD_CRITERIA)
     Page<User> findByKeyword(@Param("keyWord") String keyWord, @Param("status") String status, @Param("role") String role, @Param("publishFlag") String publishFlag,Pageable pageable);
     
+    @Query(FIND_BY_KEYWORD_SKILL_CRITERIA)
+    List<User> findByKeywordAndSkill(@Param("keyWord") String keyWord, @Param("skills") List<Integer> skills, @Param("status") String status, @Param("role") String role, @Param("publishFlag") String publishFlag);
+    
+    @Query(FIND_BY_KEYWORD_CRITERIA)
+    List<User> findByKeyword(@Param("keyWord") String keyWord, @Param("status") String status, @Param("role") String role, @Param("publishFlag") String publishFlag);
+
     @Modifying
     @Query(DELETE_USER_PROJECTS)
     @Transactional
@@ -123,5 +131,11 @@ public interface UserDAO extends JpaRepository<User, Long>, JpaSpecificationExec
     @Modifying
     @Query(SAVE_AVATAR)
     void updateAvatar(@Param("imgUrl") String imgUrl, @Param("userId") Integer userId);
-   
+       
+    /*
+    @Transactional
+    @Modifying
+    @Query(UPDATE_SLACK_STATUS)
+    Integer updateIsSlackRegisteredFlag(@Param("isSlackReg") String isSlackReg, @Param("userId") Integer userId);
+    */
 }

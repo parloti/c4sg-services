@@ -10,7 +10,9 @@ import java.util.List;
 public interface UserService {
 	
     List<UserDTO> findAll();
-
+    
+	List<UserDTO> findUsersToNotify();
+	
     Page<UserDTO> findActiveVolunteers(Pageable pageable);
     
     UserDTO findById(int id);
@@ -21,7 +23,7 @@ public interface UserService {
 
     void deleteUser(Integer id);
 
-    Page<UserDTO> search(String keyWord, List<Integer> skills, String status, String role, String publishFlag,int page, int size);
+    Page<UserDTO> search(String keyWord, List<Integer> skills, String status, String role, String publishFlag,Integer page, Integer size);
 
     List<UserDTO> getApplicants(Integer projectId);
            
