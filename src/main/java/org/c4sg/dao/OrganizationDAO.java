@@ -23,7 +23,7 @@ public interface OrganizationDAO extends CrudRepository<Organization, Integer> {
             " WHERE ((:keyword is null OR LOWER(o.name) LIKE LOWER(CONCAT('%', :keyword, '%'))" +
                 " OR LOWER(o.description) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(o.country) LIKE LOWER(CONCAT('%', :keyword, '%')))"
                 + " AND (:status is null OR o.status = :status)"
-                + " AND (:category is null OR o.category = :category)"
+                + " AND (:categories is null OR o.category in (:categories))"
                 + " AND (o.country in (:countries))"
                 + " AND (:open is null )"
                 + ")  ORDER BY o.name ASC";
@@ -32,7 +32,7 @@ public interface OrganizationDAO extends CrudRepository<Organization, Integer> {
             " WHERE ((:keyword is null OR LOWER(o.name) LIKE LOWER(CONCAT('%', :keyword, '%'))" +
                 " OR LOWER(o.description) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(o.country) LIKE LOWER(CONCAT('%', :keyword, '%')))"
                 + " AND (:status is null OR o.status = :status)"
-                + " AND (:category is null OR o.category = :category)"
+                + " AND (:categories is null OR o.category in (:categories))"
                 + " AND (o.country in (:countries))"
                 + " AND ((LOWER(p.status) ='a' AND :open=true) OR (LOWER(p.status) ='c' AND :open=false))"
                 + ")  ORDER BY o.name ASC";
@@ -41,7 +41,7 @@ public interface OrganizationDAO extends CrudRepository<Organization, Integer> {
             " WHERE ((:keyword is null OR LOWER(o.name) LIKE LOWER(CONCAT('%', :keyword, '%'))" +
                 " OR LOWER(o.description) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(o.country) LIKE LOWER(CONCAT('%', :keyword, '%')))"
                 + " AND (:status is null OR o.status = :status)"
-                + " AND (:category is null OR o.category = :category)"                
+                + " AND (:categories is null OR o.category in (:categories))"                
                 + " AND (:open is null )"
                 + ")  ORDER BY o.name ASC";
     
@@ -49,13 +49,15 @@ public interface OrganizationDAO extends CrudRepository<Organization, Integer> {
             " WHERE ((:keyword is null OR LOWER(o.name) LIKE LOWER(CONCAT('%', :keyword, '%'))" +
                 " OR LOWER(o.description) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(o.country) LIKE LOWER(CONCAT('%', :keyword, '%')))"
                 + " AND (:status is null OR o.status = :status)"
-                + " AND (:category is null OR o.category = :category)"                
+                + " AND (:categories is null OR o.category in (:categories))"                
                 + " AND ((LOWER(p.status) ='a' AND :open=true) OR (LOWER(p.status) ='c' AND :open=false))"
                 + ")  ORDER BY o.name ASC";
 
     String DELETE_USER_ORGANIZATIONS = "DELETE FROM UserOrganization uo WHERE uo.organization.id=:id";
     
     String SAVE_LOGO = "UPDATE Organization o set o.logoUrl = :imgUrl where o.id = :organizationId";
+    
+    String APPROVE_DECLINE = "UPDATE Organization o set o.status = :status where o.id = :organizationId";
     
     Organization findByName(String name);
 
@@ -71,35 +73,35 @@ public interface OrganizationDAO extends CrudRepository<Organization, Integer> {
 
     @Query(FIND_BY_CRITERIA_AND_COUNTRIES)
     Page<Organization> findByCriteriaAndCountries(@Param("keyword") String keyWord, @Param("countries") List<String> countries,@Param("open") Boolean open
-    		, @Param("status") String status, @Param("category") String category,Pageable pageable);
+    		, @Param("status") String status, @Param("categories") List<String> categories,Pageable pageable);
     
     @Query(FIND_BY_CRITERIA_AND_COUNTRIES_AND_OPEN)
     Page<Organization> findByCriteriaAndCountriesAndOpen(@Param("keyword") String keyWord, @Param("countries") List<String> countries,@Param("open") Boolean open
-    		, @Param("status") String status, @Param("category") String category,Pageable pageable);
+    		, @Param("status") String status, @Param("categories") List<String> categories,Pageable pageable);
     
     @Query(FIND_BY_CRITERIA)
     Page<Organization> findByCriteria(@Param("keyword") String keyWord, @Param("open") Boolean open
-    		, @Param("status") String status, @Param("category") String category,Pageable pageable);
+    		, @Param("status") String status, @Param("categories") List<String> categories,Pageable pageable);
     
     @Query(FIND_BY_CRITERIA_AND_OPEN)
     Page<Organization> findByCriteriaAndOpen(@Param("keyword") String keyWord, @Param("open") Boolean open
-    		, @Param("status") String status, @Param("category") String category, Pageable pageable);
+    		, @Param("status") String status, @Param("categories") List<String> categories, Pageable pageable);
 
     @Query(FIND_BY_CRITERIA_AND_COUNTRIES)
     List<Organization> findByCriteriaAndCountries(@Param("keyword") String keyWord, @Param("countries") List<String> countries,@Param("open") Boolean open
-    		, @Param("status") String status, @Param("category") String category);
+    		, @Param("status") String status, @Param("categories") List<String> categories);
     
     @Query(FIND_BY_CRITERIA_AND_COUNTRIES_AND_OPEN)
     List<Organization> findByCriteriaAndCountriesAndOpen(@Param("keyword") String keyWord, @Param("countries") List<String> countries,@Param("open") Boolean open
-    		, @Param("status") String status, @Param("category") String category);
+    		, @Param("status") String status, @Param("categories") List<String> categories);
     
     @Query(FIND_BY_CRITERIA)
     List<Organization> findByCriteria(@Param("keyword") String keyWord, @Param("open") Boolean open
-    		, @Param("status") String status, @Param("category") String category);
+    		, @Param("status") String status, @Param("categories") List<String> categories);
     
     @Query(FIND_BY_CRITERIA_AND_OPEN)
     List<Organization> findByCriteriaAndOpen(@Param("keyword") String keyWord, @Param("open") Boolean open
-    		, @Param("status") String status, @Param("category") String category);
+    		, @Param("status") String status, @Param("categories") List<String> categories);
     
     @Modifying
     @Query(DELETE_USER_ORGANIZATIONS)
@@ -113,4 +115,8 @@ public interface OrganizationDAO extends CrudRepository<Organization, Integer> {
     @Query(SAVE_LOGO)
     void updateLogo(@Param("imgUrl") String imgUrl, @Param("organizationId") Integer organizationId);
    
+    @Transactional
+    @Modifying
+    @Query(APPROVE_DECLINE)
+    void approveOrDecline(@Param("organizationId") Integer organizationId, @Param("status") String status);
 }

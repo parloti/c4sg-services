@@ -4,8 +4,10 @@ import io.swagger.annotations.*;
 
 import org.c4sg.dto.ApplicantDTO;
 import org.c4sg.dto.CreateUserDTO;
+import org.c4sg.dto.JobTitleDTO;
 import org.c4sg.dto.UserDTO;
 import org.c4sg.exception.UserServiceException;
+import org.c4sg.service.ProjectService;
 import org.c4sg.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,14 +26,19 @@ public class UserController {
     private static Logger LOGGER = LoggerFactory.getLogger(UserController.class);
     
     @Autowired
+    private ProjectService projectService;
+    
+    @Autowired
     private UserService userService;
-       
+    
+	@CrossOrigin
     @RequestMapping(method = RequestMethod.GET)
     @ApiOperation(value = "Find all users", notes = "Returns a collection of users")
     public List<UserDTO> getUsers() {
         return userService.findAll();
     }
     
+	@CrossOrigin
     @RequestMapping(value = "/{id}", method = RequestMethod.GET)
     @ApiOperation(value = "Find user by ID", notes = "Returns a user")
     public UserDTO getUser(@ApiParam(value = "ID of user to return", required = true)
@@ -39,6 +46,7 @@ public class UserController {
         return userService.findById(id);
     }
 
+	@CrossOrigin
     @RequestMapping(value = "/organization/{orgId}", method = RequestMethod.GET)
     @ApiOperation(value = "Find users by Organization ID", notes = "Returns a list of users from this organization")
     public List<UserDTO> getUsersInOrganization(@ApiParam(value = "ID of organization to return users", required = true)
@@ -54,6 +62,7 @@ public class UserController {
         return userService.findByEmail(email);
     }
     
+	@CrossOrigin
     @RequestMapping(method = RequestMethod.POST)
     @ApiOperation(value = "Add a new user")
     public UserDTO createUser(@ApiParam(value = "User object to return", required = true)
@@ -66,6 +75,7 @@ public class UserController {
         }
     }
     
+	@CrossOrigin
     @RequestMapping(method = RequestMethod.PUT)
     @ApiOperation(value = "Update an existing user")
     public UserDTO updateUser(@ApiParam(value = "Updated user object", required = true)
@@ -85,6 +95,7 @@ public class UserController {
         return userService.getApplicants(projectId);
     }
     
+	@CrossOrigin
     @RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
     @ApiOperation(value = "Delete a user")
     public void deleteUser(@ApiParam(value = "User id to delete", required = true)
@@ -97,10 +108,13 @@ public class UserController {
         }
     }
     
+	@CrossOrigin
     @RequestMapping(value = "/search", method = RequestMethod.GET)
     @ApiOperation(value = "Find a user by keyWord, skills, status, role or publicFlag", notes = "Returns a collection of users")
     public Page<UserDTO> getUsers(@ApiParam(value = "Keyword like name , title, introduction, state, country")
                                         @RequestParam(required=false) String keyWord,
+                                        @ApiParam(value = "Job Title ID of the user")
+    									@RequestParam(required = false)  Integer jobTitleId,
                                         @ApiParam(value = "Skills of the User")
                                         @RequestParam(required = false) List<Integer> skills,
                                         @ApiParam(value = "Status of the User")
@@ -109,12 +123,12 @@ public class UserController {
     									@Pattern(regexp="[VOA]") @RequestParam(required = false) String role,
 									    @ApiParam(value = "User Public Flag")
 										@Pattern(regexp="[YN]") @RequestParam(required = false) String publishFlag,
-    @ApiParam(value = "Results page you want to retrieve (0..N)", required=false)
-    @RequestParam(required=false) Integer page,
-    @ApiParam(value = "Number of records per page", required=false)
-    @RequestParam(required=false) Integer size)
+										@ApiParam(value = "Results page you want to retrieve (0..N)", required=false)
+    									@RequestParam(required=false) Integer page,
+    									@ApiParam(value = "Number of records per page", required=false)
+    									@RequestParam(required=false) Integer size)
     {
-        return userService.search(keyWord,skills,status,role,publishFlag,page,size);
+        return userService.search(keyWord, jobTitleId, skills, status, role, publishFlag, page, size);
     }
         
     @CrossOrigin
@@ -125,6 +139,13 @@ public class UserController {
 
     	userService.saveAvatar(id, url);
 	}
+    
+    @CrossOrigin
+    @RequestMapping(value="/jobTitles", method = RequestMethod.GET)
+    @ApiOperation(value = "Get a list of job titles")
+    public List<JobTitleDTO> getJobTitles() {
+        return projectService.findJobTitles();
+    }
     
     /* Obsolete, replaced with search endpoint  
     @CrossOrigin

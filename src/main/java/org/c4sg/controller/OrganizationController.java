@@ -9,8 +9,10 @@ import java.util.Map;
 import javax.validation.Valid;
 import javax.validation.constraints.Pattern;
 
+import org.c4sg.constraint.ListEntry;
 import org.c4sg.dto.CreateOrganizationDTO;
 import org.c4sg.dto.OrganizationDTO;
+import org.c4sg.exception.BadRequestException;
 import org.c4sg.exception.NotFoundException;
 import org.c4sg.exception.UserOrganizationException;
 import org.c4sg.service.OrganizationService;
@@ -65,14 +67,18 @@ public class OrganizationController {
 			@ApiParam(value = "Keyword in Name or description or country of organization to return", required = false) @RequestParam(required = false) String keyWord,
 			@ApiParam(value = "Countries of organization to return", required = false) @RequestParam(required = false) List<String> countries,
 			@ApiParam(value = "Opportunities open in the organization", required = false) @RequestParam(required = false) Boolean open,
-			@ApiParam(value = "Status of the organization to return", required = false) @Pattern(regexp="[AD]") @RequestParam(required = false) String status,
-			@ApiParam(value = "Category of the organization to return", required = false) @Pattern(regexp="[NOM]") @RequestParam(required = false) String category,
+			@ApiParam(value = "Status of the organization to return", required = false) @Pattern(regexp="[ADP]") @RequestParam(required = false) String status,
+			@ApiParam(value = "Category of the organization to return", required = false) @ListEntry @RequestParam(required = false) List<String> category,
 		    @ApiParam(value = "Results page you want to retrieve (0..N)",required=false)
 		    @RequestParam(required=false) Integer page,
 		    @ApiParam(value = "Number of records per page", required=false)
 		    @RequestParam(required=false) Integer size)	
 	{
-		return organizationService.findByCriteria(keyWord, countries, open, status, category,page,size);
+		try {
+			return organizationService.findByCriteria(keyWord, countries, open, status, category,page,size);
+		} catch (Exception e) {
+			throw new BadRequestException(e.getMessage());
+		}
 	}
 
 	@CrossOrigin
@@ -171,5 +177,15 @@ public class OrganizationController {
 			@ApiParam(value = "Image Url", required = true) @RequestParam("imgUrl") String url) {
 
     	organizationService.saveLogo(id, url);
+	}
+    
+    @CrossOrigin
+    @RequestMapping(value = "/{id}/approve", params = "status", method = RequestMethod.PUT)
+	@ApiOperation(value = "Approve an organization")
+	public void approve(
+			@ApiParam(value = "organization Id", required = true) @PathVariable("id") Integer id,
+			@ApiParam(value = "status", required = true) @RequestParam("status") String status) {
+
+    	organizationService.approveOrDecline(id, status);
 	}
 }

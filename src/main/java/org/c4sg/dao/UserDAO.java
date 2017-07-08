@@ -44,21 +44,22 @@ public interface UserDAO extends JpaRepository<User, Long>, JpaSpecificationExec
     	       	    +   " RIGHT OUTER JOIN us.user u" 
     	       	    +   " LEFT OUTER JOIN us.skill s"		
     	       	    +   " WHERE ("
-    	       	    	+ 	"(:keyWord is null OR LOWER(u.userName) LIKE LOWER(CONCAT('%', :keyWord, '%'))" 
-    	       	    	+   " OR LOWER(u.firstName) LIKE LOWER(CONCAT('%', :keyWord, '%'))"
-    	       	    	+   " OR LOWER(u.lastName) LIKE LOWER(CONCAT('%', :keyWord, '%'))"
-    	               +   " OR LOWER(u.title) LIKE LOWER(CONCAT('%', :keyWord, '%'))"
-    	               +   " OR LOWER(u.introduction) LIKE LOWER(CONCAT('%', :keyWord, '%'))"
-    	               +	" OR LOWER(u.state) LIKE LOWER(CONCAT('%', :keyWord, '%'))"
-    	               +   " OR LOWER(u.country) LIKE LOWER(CONCAT('%', :keyWord, '%'))"           
-    	               +   " OR LOWER(s.skillName) LIKE LOWER(CONCAT('%',:keyWord,'%')))"
-    	               +   " AND (us.skill.id in (:skills))"
-    	               //+   " AND (:skillCount = (select count(distinct ps2.skill.id) from ProjectSkill ps2 where ps2.project.id=ps.project.id and ps2.skill.id in (:skills)) OR :skillCount=0)" 
-    	               +   " AND (:status is null OR u.status = :status)"
-    	               +   " AND (:role is null OR u.role = :role)"
-    	               +   " AND (:publishFlag is null OR u.publishFlag = :publishFlag)"
-    	               +   ")  "
-    	               + "ORDER BY u.createdTime DESC";
+    	       	    + 	"(:keyWord is null OR LOWER(u.userName) LIKE LOWER(CONCAT('%', :keyWord, '%'))" 
+    	       	    +   " OR LOWER(u.firstName) LIKE LOWER(CONCAT('%', :keyWord, '%'))"
+    	       	    +   " OR LOWER(u.lastName) LIKE LOWER(CONCAT('%', :keyWord, '%'))"
+    	            +   " OR LOWER(u.title) LIKE LOWER(CONCAT('%', :keyWord, '%'))"
+    	            +   " OR LOWER(u.introduction) LIKE LOWER(CONCAT('%', :keyWord, '%'))"
+    	            +	" OR LOWER(u.state) LIKE LOWER(CONCAT('%', :keyWord, '%'))"
+    	            +   " OR LOWER(u.country) LIKE LOWER(CONCAT('%', :keyWord, '%'))"           
+    	            +   " OR LOWER(s.skillName) LIKE LOWER(CONCAT('%',:keyWord,'%')))"
+    	            +   " AND (us.skill.id in (:skills))"
+    	            //+   " AND (:skillCount = (select count(distinct ps2.skill.id) from ProjectSkill ps2 where ps2.project.id=ps.project.id and ps2.skill.id in (:skills)) OR :skillCount=0)" 
+    	            +   " AND (:status is null OR u.status = :status)"
+    	            +   " AND (:jobTitleId is null OR u.jobTitleId = :jobTitleId)"
+    	            +   " AND (:role is null OR u.role = :role)"
+    	            +   " AND (:publishFlag is null OR u.publishFlag = :publishFlag)"
+    	            +   ")  "
+    	            + "ORDER BY u.createdTime DESC";
     	                
      String FIND_BY_KEYWORD_CRITERIA = 
        	"SELECT DISTINCT u"
@@ -66,19 +67,21 @@ public interface UserDAO extends JpaRepository<User, Long>, JpaSpecificationExec
        	    +   " RIGHT OUTER JOIN us.user u" 
        	    +   " LEFT OUTER JOIN us.skill s"		
        	    +   " WHERE ("
-       	    	+ 	"(:keyWord is null OR LOWER(u.userName) LIKE LOWER(CONCAT('%', :keyWord, '%'))" 
-       	    	+   " OR LOWER(u.firstName) LIKE LOWER(CONCAT('%', :keyWord, '%'))"
-       	    	+   " OR LOWER(u.lastName) LIKE LOWER(CONCAT('%', :keyWord, '%'))"
-               +   " OR LOWER(u.title) LIKE LOWER(CONCAT('%', :keyWord, '%'))"
-               +   " OR LOWER(u.introduction) LIKE LOWER(CONCAT('%', :keyWord, '%'))"
-               +	" OR LOWER(u.state) LIKE LOWER(CONCAT('%', :keyWord, '%'))"
-               +   " OR LOWER(u.country) LIKE LOWER(CONCAT('%', :keyWord, '%'))"           
-               +   " OR LOWER(s.skillName) LIKE LOWER(CONCAT('%',:keyWord,'%')))"             
-               //+   " AND (:skillCount = (select count(distinct ps2.skill.id) from ProjectSkill ps2 where ps2.project.id=ps.project.id and ps2.skill.id in (:skills)) OR :skillCount=0)" 
-               +   " AND (:status is null OR u.status = :status)"
-               +   " AND (:role is null OR u.role = :role)"               +   " AND (:publishFlag is null OR u.publishFlag = :publishFlag)"
-               +   ")  "
-               + "ORDER BY u.createdTime DESC";
+       	    + 	"(:keyWord is null OR LOWER(u.userName) LIKE LOWER(CONCAT('%', :keyWord, '%'))" 
+       	    +   " OR LOWER(u.firstName) LIKE LOWER(CONCAT('%', :keyWord, '%'))"
+       	    +   " OR LOWER(u.lastName) LIKE LOWER(CONCAT('%', :keyWord, '%'))"
+            +   " OR LOWER(u.title) LIKE LOWER(CONCAT('%', :keyWord, '%'))"
+            +   " OR LOWER(u.introduction) LIKE LOWER(CONCAT('%', :keyWord, '%'))"
+            +	" OR LOWER(u.state) LIKE LOWER(CONCAT('%', :keyWord, '%'))"
+            +   " OR LOWER(u.country) LIKE LOWER(CONCAT('%', :keyWord, '%'))"           
+            +   " OR LOWER(s.skillName) LIKE LOWER(CONCAT('%',:keyWord,'%')))"             
+            //+   " AND (:skillCount = (select count(distinct ps2.skill.id) from ProjectSkill ps2 where ps2.project.id=ps.project.id and ps2.skill.id in (:skills)) OR :skillCount=0)" 
+            +   " AND (:status is null OR u.status = :status)"
+            +   " AND (:jobTitleId is null OR u.jobTitleId = :jobTitleId)"
+            +   " AND (:role is null OR u.role = :role)"               
+            +   " AND (:publishFlag is null OR u.publishFlag = :publishFlag)"
+            +   ")  "
+            + "ORDER BY u.createdTime DESC";
     
      String FIND_APPLICANT_QUERY =     
      		"SELECT upa.user_id, upa.project_id, u.first_name, u.last_name, u.title, upa.created_time as applied_time, upc.created_time as approved_time, upd.created_time as declined_time " +  
@@ -86,7 +89,8 @@ public interface UserDAO extends JpaRepository<User, Long>, JpaSpecificationExec
      		"LEFT OUTER JOIN user_project upa ON u.id = upa.user_id AND upa.status = 'A' " +
      		"LEFT OUTER JOIN user_project upc ON u.id = upc.user_id AND upc.status = 'C' " +
      		"LEFT OUTER JOIN user_project upd ON u.id = upd.user_id AND upd.status = 'D' " +
-     		"WHERE upa.project_id = :projectId";
+     		"WHERE upa.project_id = :projectId " + 
+            "ORDER BY upa.created_time DESC";
      
     String DELETE_USER_PROJECTS = "DELETE FROM UserProject up WHERE up.user.id=:userId";
     String DELETE_USER_SKILLS = "DELETE FROM UserSkill us WHERE us.user.id=:userId";    
@@ -114,16 +118,16 @@ public interface UserDAO extends JpaRepository<User, Long>, JpaSpecificationExec
     List<User> findByOrgId(@Param("orgId") Integer orgId);
 
     @Query(FIND_BY_KEYWORD_SKILL_CRITERIA)
-    Page<User> findByKeywordAndSkill(@Param("keyWord") String keyWord, @Param("skills") List<Integer> skills, @Param("status") String status, @Param("role") String role, @Param("publishFlag") String publishFlag, Pageable pageable);
+    Page<User> findByKeywordAndSkill(@Param("keyWord") String keyWord, @Param("jobTitleId") Integer jobTitleId, @Param("skills") List<Integer> skills, @Param("status") String status, @Param("role") String role, @Param("publishFlag") String publishFlag, Pageable pageable);
     
     @Query(FIND_BY_KEYWORD_CRITERIA)
-    Page<User> findByKeyword(@Param("keyWord") String keyWord, @Param("status") String status, @Param("role") String role, @Param("publishFlag") String publishFlag,Pageable pageable);
+    Page<User> findByKeyword(@Param("keyWord") String keyWord, @Param("jobTitleId") Integer jobTitleId, @Param("status") String status, @Param("role") String role, @Param("publishFlag") String publishFlag,Pageable pageable);
     
     @Query(FIND_BY_KEYWORD_SKILL_CRITERIA)
-    List<User> findByKeywordAndSkill(@Param("keyWord") String keyWord, @Param("skills") List<Integer> skills, @Param("status") String status, @Param("role") String role, @Param("publishFlag") String publishFlag);
+    List<User> findByKeywordAndSkill(@Param("keyWord") String keyWord, @Param("jobTitleId") Integer jobTitleId, @Param("skills") List<Integer> skills, @Param("status") String status, @Param("role") String role, @Param("publishFlag") String publishFlag);
     
     @Query(FIND_BY_KEYWORD_CRITERIA)
-    List<User> findByKeyword(@Param("keyWord") String keyWord, @Param("status") String status, @Param("role") String role, @Param("publishFlag") String publishFlag);
+    List<User> findByKeyword(@Param("keyWord") String keyWord, @Param("jobTitleId") Integer jobTitleId, @Param("status") String status, @Param("role") String role, @Param("publishFlag") String publishFlag);
 
     @Modifying
     @Query(DELETE_USER_PROJECTS)
