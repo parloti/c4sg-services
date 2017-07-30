@@ -1,22 +1,22 @@
 package org.c4sg.service.impl;
 
 import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.c4sg.constant.Constants;
 import org.c4sg.dao.OrganizationDAO;
-import org.c4sg.dao.ProjectDAO;
 import org.c4sg.dao.UserDAO;
 import org.c4sg.dto.ApplicantDTO;
 import org.c4sg.dto.CreateUserDTO;
 import org.c4sg.dto.OrganizationDTO;
 import org.c4sg.dto.UserDTO;
 import org.c4sg.entity.Organization;
-import org.c4sg.entity.Project;
 import org.c4sg.entity.User;
 import org.c4sg.exception.NotFoundException;
 import org.c4sg.mapper.UserMapper;
+import org.c4sg.service.AsyncEmailService;
 import org.c4sg.service.GeocodeService;
 import org.c4sg.service.OrganizationService;
 import org.c4sg.service.UserService;
@@ -35,9 +35,6 @@ public class UserServiceImpl implements UserService {
 	private UserDAO userDAO;
 	
 	@Autowired
-	private ProjectDAO projectDAO;
-	
-	@Autowired
 	private OrganizationDAO organizationDAO;
 
 	@Autowired
@@ -48,7 +45,10 @@ public class UserServiceImpl implements UserService {
 	
 	@Autowired
 	private GeocodeService geocodeService;
-	
+		
+    @Autowired
+    private AsyncEmailService asyncEmailService;
+    
 	@Override
 	public List<UserDTO> findAll() {
 		List<User> users = userDAO.findAllByOrderByIdDesc();
@@ -94,6 +94,7 @@ public class UserServiceImpl implements UserService {
         }  catch (Exception e) {
         	throw new NotFoundException("Error getting geocode");
 		}
+		
 		return userMapper.getUserDtoFromEntity(userDAO.save(user));
 	}
 
@@ -108,6 +109,20 @@ public class UserServiceImpl implements UserService {
         for (OrganizationDTO org:organizations) {
         	organizationService.deleteOrganization(org.getId());
         }
+        
+        // Sends notification to admin user. Delete user will be performed by admin user from Auth0 internally to reduce risk.
+    	String toAddress = null;
+    	List<User> users = userDAO.findByKeyword(null, "A", "A", null);
+    	if (users != null && !users.isEmpty()) {
+    		User adminUser = users.get(0);
+    		toAddress = adminUser.getEmail();
+    	}	
+    			
+    	Map<String, Object> context = new HashMap<String, Object>();
+    	context.put("user", user);         	
+    	asyncEmailService.sendWithContext(Constants.C4SG_ADDRESS, toAddress, Constants.SUBJECT_DELETE_USER, Constants.TEMPLATE_DELETE_USER, context);
+    	System.out.println("Delete user email sent: User=" + id + " ; Email=" + toAddress);
+
     }
 		
 	@Override
@@ -121,26 +136,38 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
-	public Page<UserDTO> search(String keyWord, Integer jobTitleId, List<Integer> skills, String status, String role, String publishFlag, Integer page, Integer size) {
+	public Page<UserDTO> search(String keyWord, List<Integer> jobTitles, List<Integer> skills, String status, String role, String publishFlag, Integer page, Integer size) {
 
 		Page<User> userPages = null;
-		List<User> users=null;
-		if (page==null) page=0;
-		if (size==null) {
-			if(skills != null) {
-				users = userDAO.findByKeywordAndSkill(keyWord, jobTitleId, skills, status, role, publishFlag);
-	    	} else{
-	    		users = userDAO.findByKeyword(keyWord, jobTitleId, status, role, publishFlag);
+		List<User> users = null;
+		
+		if (page == null) 
+			page=0;
+		
+		if (size == null) {
+			if(skills != null && jobTitles != null) {
+				users = userDAO.findByKeywordAndJobAndSkill(keyWord, jobTitles, skills, status, role, publishFlag);
+			} else if(skills != null) {
+				users = userDAO.findByKeywordAndSkill(keyWord, skills, status, role, publishFlag);
+			} else if(jobTitles != null) {
+				users = userDAO.findByKeywordAndJob(keyWord, jobTitles, status, role, publishFlag);
+	    	} else {
+	    		users = userDAO.findByKeyword(keyWord, status, role, publishFlag);
 	    	}
 			userPages=new PageImpl<User>(users);
 		} else {
-			Pageable pageable=new PageRequest(page,size);
-			if(skills != null) {
-				userPages = userDAO.findByKeywordAndSkill(keyWord, jobTitleId, skills, status, role, publishFlag,pageable);
-	    	} else{
-	    		userPages = userDAO.findByKeyword(keyWord, jobTitleId, status, role, publishFlag,pageable);
+			Pageable pageable = new PageRequest(page,size);
+			if(skills != null && jobTitles != null) {
+				userPages = userDAO.findByKeywordAndJobAndSkill(keyWord, jobTitles, skills, status, role, publishFlag, pageable);
+			} else if(skills != null) {
+				userPages = userDAO.findByKeywordAndSkill(keyWord, skills, status, role, publishFlag, pageable);
+			} else if(jobTitles != null) {
+				userPages = userDAO.findByKeywordAndJob(keyWord, jobTitles, status, role, publishFlag, pageable);
+	    	} else {
+	    		userPages = userDAO.findByKeyword(keyWord, status, role, publishFlag, pageable);
 	    	}			
 		}
+		
 		Page<UserDTO> userDTOS = userPages.map(p -> userMapper.getUserDtoFromEntity(p));
 		return userDTOS;// mapUsersToUserDtos(users);
 	}
@@ -161,6 +188,7 @@ public class UserServiceImpl implements UserService {
 			}
 		}
         
+		user.setStatus("N"); // Set user status to "N" for new user
         User userEntity = userDAO.save(user);
         
         // If the user is organization user:
